@@ -44,10 +44,15 @@ namespace ConsoleApp1.myClass
             {
                 for (int f = 0; f < test_1.Length; f++)
                 {
-                    if (kata.Substring(kata.Length - 3).Equals(test_1[f]))
+                    if (kata.Length < 3)
+                    {
+                        
+                    }
+                    else if (kata.Substring(kata.Length - 3).Equals(test_1[f]))
                     {
                         verified++;
                     }
+                    
                 }
             }
             return verified;
@@ -78,7 +83,11 @@ namespace ConsoleApp1.myClass
             {
                 for (int f = 0; f < test_2.Length; f++)
                 {
-                    if (kata.Substring(kata.Length - 3).Equals(test_2[f]))
+                    if (kata.Length < 3)
+                    {
+                        
+                    }
+                     else if (kata.Substring(kata.Length - 3).Equals(test_2[f]))
                     {
                         verified++;
                     }
@@ -233,9 +242,7 @@ namespace ConsoleApp1.myClass
 
         public void runStemming_Tala(string text)
         {
-            char[] delimiterChars = { ' ', ',', '.', ':', '\t', '-', '(', ')' };
-
-            
+            char[] delimiterChars = { ' ', '.', ':', '\t', '-', '(', ')' };
             System.Console.WriteLine($"Original text: '{text}'");
             string[] words = text.Split(delimiterChars);
             System.Console.WriteLine($"{text.Length} words in text:");
@@ -341,6 +348,10 @@ namespace ConsoleApp1.myClass
                             Console.WriteLine("Tidak Punyak akhiran, maka dilakukan menghilangkan awalan 1 menjadi " + "[" + arrayWord[i] + "]");
                         }
                     }
+                }
+                else if (arrayWord[i].Length < 3)
+                {
+                    arrayWord[i] = "";
                 }
                 else
                 {
