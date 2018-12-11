@@ -12,6 +12,10 @@ namespace ConsoleApp1.myClass
     {
         private koneksi con;
         string[] arrayWord;
+        string[] Array_frekuensi, countFrekuensi;
+        int[] Array_frekuensiCopy;
+        int[] Array_frekuensiResult;
+        private string[] value;
 
         public int getCOunt()
         {
@@ -46,13 +50,13 @@ namespace ConsoleApp1.myClass
                 {
                     if (kata.Length < 3)
                     {
-                        
+
                     }
                     else if (kata.Substring(kata.Length - 3).Equals(test_1[f]))
                     {
                         verified++;
                     }
-                    
+
                 }
             }
             return verified;
@@ -85,9 +89,9 @@ namespace ConsoleApp1.myClass
                 {
                     if (kata.Length < 3)
                     {
-                        
+
                     }
-                     else if (kata.Substring(kata.Length - 3).Equals(test_2[f]))
+                    else if (kata.Substring(kata.Length - 3).Equals(test_2[f]))
                     {
                         verified++;
                     }
@@ -130,7 +134,11 @@ namespace ConsoleApp1.myClass
             {
                 for (int f = 0; f < test_2.Length; f++)
                 {
-                    if (kata.Substring(0, 2).Equals(test_2[f]))
+                    if (kata.Length < 3)
+                    {
+                        verified = 0;
+                    }
+                    else if (kata.Substring(0, 2).Equals(test_2[f]))
                     {
                         verified++;
                     }
@@ -138,14 +146,7 @@ namespace ConsoleApp1.myClass
                     {
                         verified++;
                     }
-                    else if (kata.Substring(0, 4).Equals(test_2[f]))
-                    {
-                        verified++;
-                    }
-                    else if (kata.Substring(0, 5).Equals(test_2[f]))
-                    {
-                        verified++;
-                    }
+
                 }
             }
             return verified;
@@ -242,7 +243,7 @@ namespace ConsoleApp1.myClass
 
         public void runStemming_Tala(string text)
         {
-            char[] delimiterChars = { ' ', '.', ':', '\t', '-', '(', ')' };
+            char[] delimiterChars = { ' ', ',', '.', ':', '\t', '-', '(', ')', '"', '`' };
             System.Console.WriteLine($"Original text: '{text}'");
             string[] words = text.Split(delimiterChars);
             System.Console.WriteLine($"{text.Length} words in text:");
@@ -273,6 +274,7 @@ namespace ConsoleApp1.myClass
                 arrayWord[i] = text.Split(delimiterChars)[i].ToString().ToLower();
                 Console.WriteLine("[" + arrayWord[i] + "]");
                 //Proses filtering, atau menghilangkan kata sambung//
+
                 if (count.getKataSambung(arrayWord[i]) == true)
                 {
                     //proses menghilangkan wordList//
@@ -341,13 +343,19 @@ namespace ConsoleApp1.myClass
                         {
                             Console.WriteLine("sudah kata dasar jadi " + "[" + arrayWord[i] + "]");
                         }
-                        else if (count.cekawalan1(arrayWord[i]) > 1)//cek punyak awalan kah ???
+                        else if (count.cekawalan1(arrayWord[i]) > 0)//cek punyak awalan kah ???
                         {
                             Console.WriteLine("[" + arrayWord[i] + "]" + "Tidak Punyak akhiran, maka dilakukan menghilangkan awalan 1");
                             arrayWord[i] = count.replace_Awalan1(arrayWord[i]);
                             Console.WriteLine("Tidak Punyak akhiran, maka dilakukan menghilangkan awalan 1 menjadi " + "[" + arrayWord[i] + "]");
                         }
                     }
+                }
+                else if (count.cekawalan1(arrayWord[i]) > 0)
+                {
+                    Console.WriteLine("[" + arrayWord[i] + "]" + "Tidak Punyak akhiran, maka dilakukan menghilangkan awalan");
+                    arrayWord[i] = count.replace_Awalan1(arrayWord[i]);
+                    Console.WriteLine("Tidak Punyak akhiran, maka dilakukan menghilangkan awalan 1 menjadi " + "[" + arrayWord[i] + "]");
                 }
                 else if (arrayWord[i].Length < 3)
                 {
@@ -362,22 +370,82 @@ namespace ConsoleApp1.myClass
 
 
         }
+        public string[] getValue_Tala2()
+        {
+            Console.WriteLine("=================TERM KATA YANG DIDAPAT=========================");
+            int count = 0;
+            List<string> my_List = new List<string>();
+            for (int i = 0; i < arrayWord.Length; i++)
+            {
+                if (!arrayWord[i].Equals(""))
+                {
+                    count++;
+                }
+
+            }
+            for (int i = 0; i < count; i++)
+            {
+                if (!arrayWord[i].Equals(""))
+                {
+                    value[i] = arrayWord[i];
+                }
+                Console.WriteLine(value[i] + "``");
+            }
+            Console.WriteLine("=================SUKSES==========================");
+
+            return value;
+
+        }
         public string getValue_Tala()
         {
+            int[] frekuensi = new int[arrayWord.Length];
             string value = null;
             Console.WriteLine("TERM KATA YANG DIDAPAT==================================================");
             for (int wir = 0; wir < arrayWord.Length; wir++)
             {
                 if (!arrayWord[wir].Equals(""))
                 {
-                    Console.WriteLine("[" + arrayWord[wir] + "]");
+                    Console.WriteLine(arrayWord[wir]);
                     value = arrayWord[wir];
                 }
             }
             Console.WriteLine("=================SUKSES==========================");
-            Console.ReadKey();
-            Console.ReadKey();
             return value;
+        }
+
+        public void getFrekunsiKata()
+        {
+            int[] frekuensi = new int[arrayWord.Length];
+            int n, i, j, ctr;
+            for (i = 0; i < arrayWord.Length; i++)
+            {
+                frekuensi[i] = -1;
+            }
+            for (i = 0; i < arrayWord.Length; i++)
+            {
+                ctr = 1;
+                for (j = i + 1; j < arrayWord.Length; j++)
+                {
+                    if (arrayWord[i].Equals(arrayWord[j]))
+                    {
+                        ctr++;
+                        frekuensi[j] = 0;
+                    }
+                }
+                if (frekuensi[i] != 0)
+                {
+                    frekuensi[i] = ctr;
+                }
+            }
+            Console.Write("\nThe frequency of all elements of the array : \n");
+            for (i = 0; i < arrayWord.Length; i++)
+            {
+                if (frekuensi[i] != 0)
+                {
+                    Console.Write("{0} muncul {1} kali\n", arrayWord[i], frekuensi[i]);
+                }
+
+            }
         }
     }
 }

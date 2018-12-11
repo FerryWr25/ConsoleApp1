@@ -57,6 +57,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="myClass\bayyesClassifier.cs" />
     <Compile Include="myClass\koneksi.cs" />
     <Compile Include="myClass\ReadJson.cs" />
     <Compile Include="myClass\stemmingTala.cs" />
@@ -65,7 +66,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Dokumen\konten.json" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
