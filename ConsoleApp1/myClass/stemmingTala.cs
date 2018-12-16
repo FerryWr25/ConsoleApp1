@@ -10,12 +10,13 @@ namespace ConsoleApp1.myClass
 {
     class stemmingTala
     {
-        private koneksi con;
+
         string[] arrayWord;
         string[] Array_frekuensi, countFrekuensi;
         int[] Array_frekuensiCopy;
         int[] Array_frekuensiResult;
         private string[] value;
+        koneksi con = new koneksi();
 
         public int getCOunt()
         {
@@ -25,11 +26,220 @@ namespace ConsoleApp1.myClass
             int count = result.Rows.Count;
             return count;
         }
+
+        public bool runVSM_DB(string data, string id, int tf)
+        {
+            int status = 0;
+            string idTerm;
+            this.con = new koneksi();
+            con.openConnection();
+            string cek_KesediaanTerm = "SELECT * FROM public.\"Term\" where \"Term\"='" + data + "';";
+            DataTable result = this.con.getResult(cek_KesediaanTerm);
+            con.stopAccess();
+            if (result.Rows.Count == 0)
+            {
+                //simpan Term baru
+                con.openConnection();
+                this.con = new koneksi();
+                string queryTerm = "INSERT INTO public.\"Term\"(\"Term\", \"DF\") VALUES ('" + data + "','1');";
+                con.excequteQuery(queryTerm);
+                con.stopAccess();
+
+                //baca idTermnya
+                idTerm = cariID_Term(data);
+                insert_ToBobot(id, idTerm, tf);
+                con.stopAccess();
+
+            }
+            else // ketika sama
+            {
+                //baca idTermnya
+                idTerm = cariID_Term(data);
+                //update nilai df kata-n
+                int dfBefore = Convert.ToInt32(getValueDF(data));
+                int data_update = (dfBefore + 1);
+                updateDF(data, Convert.ToString(data_update));
+                insert_ToBobot(id, idTerm, tf);
+                con.stopAccess();
+            }
+            //simpan dokument
+            return true;
+
+        }
+        public double count_IDF(string id_term)
+        {
+            //hitung idf
+            double n_Doc = Convert.ToDouble(get_LongDoc());
+            double n_DF = Convert.ToDouble(getDF_Term(id_term));
+            double IDF = Math.Round(Math.Log10(n_Doc / n_DF), 3);
+            Console.WriteLine("Log (" + n_Doc + "/" + n_DF + ")" + " = " + IDF);
+            //set IDF
+            return IDF;
+        }
+        public double count_TF_IDF(string id_term, string idBobotTerm)
+        {
+            //hitung idf
+            double TF_Term = Convert.ToDouble(getTF_Term(idBobotTerm));
+            double IDF_Term = Convert.ToDouble(getIDF_Term(id_term));
+            double TF_IDF = Math.Round(TF_Term * IDF_Term, 3);
+            Console.WriteLine(TF_Term + " * " + IDF_Term + " = " + TF_IDF);
+            //set IDF
+            return TF_IDF;
+        }
+        public string getTF_Term(string idBobotTerm)
+        {
+            con.openConnection();
+            int getTF_Term = 0;
+            string QgetDF_Term = "SELECT \"Tf\" FROM public.\"bobotTerm\" where \"id_bobotTerm\"='" + idBobotTerm + "';";
+            DataTable result = this.con.getResult(QgetDF_Term);
+            getTF_Term = Convert.ToInt32(result.Rows[0]["Tf"]);
+            con.stopAccess();
+            return getTF_Term.ToString();
+        }
+        public string getIDF_Term(string idTerm)
+        {
+            con.openConnection();
+            double getIDF_Term = 0;
+            string QgetDF_Term = "SELECT \"IDF\"  FROM public.\"Term\" where \"id_Term\"='" + idTerm + "';";
+            DataTable result = this.con.getResult(QgetDF_Term);
+            getIDF_Term = Convert.ToDouble(result.Rows[0]["IDF"]);
+            con.stopAccess();
+            return getIDF_Term.ToString();
+
+        }
+
+        public int getDF_Term(string id_term)
+        {
+            con.openConnection();
+            int getDF_Term;
+            string QgetDF_Term = "SELECT \"DF\" FROM public.\"Term\" where \"id_Term\"='" + id_term + "';";
+            DataTable result = this.con.getResult(QgetDF_Term);
+            getDF_Term = Convert.ToInt32(result.Rows[0]["DF"]);
+            con.stopAccess();
+            return getDF_Term;
+        }
+        public int get_LongDoc()
+        {
+            int getNumber;
+            con.openConnection();
+            this.con = new koneksi();
+            string queryDF = "SELECT count (*) as dipakek_nDoc FROM public.\"bobotTerm\" group by \"idDokumen\";";
+            DataTable result = this.con.getResult(queryDF);
+            getNumber = Convert.ToInt32(result.Rows.Count);
+            con.stopAccess();
+            return getNumber;
+        }
+        public void updateDF(string term, string ndata)
+        {
+            con.openConnection();
+            this.con = new koneksi();
+            string queryDF = "UPDATE public.\"Term\" set \"DF\"=" + ndata + " WHERE \"Term\"='" + term + "';";
+            con.excequteQuery(queryDF);
+            con.stopAccess();
+        }
+        public void updateIDF(double value, string idTerm)
+        {
+            con.openConnection();
+            this.con = new koneksi();
+            string queryDF = "UPDATE public.\"Term\" SET \"IDF\"= '" + value + "' WHERE \"id_Term\"='" + idTerm + "';";
+            con.excequteQuery(queryDF);
+            con.stopAccess();
+        }
+        public void updateTF_IDF(double value, string idBobotTerm)
+        {
+            con.openConnection();
+            this.con = new koneksi();
+            string queryTF_IDF = "UPDATE public.\"bobotTerm\" SET \"TF-IDF\"='" + value + "' WHERE \"id_bobotTerm\"='" + idBobotTerm + "';";
+            con.excequteQuery(queryTF_IDF);
+            con.stopAccess();
+        }
+
+        public string getValueDF(string term)
+        {
+            string valueCari = null;
+            this.con = new koneksi();
+            con.openConnection();
+            string termMasuk = "SELECT \"DF\"  FROM public.\"Term\" where \"Term\"='" + term + "';";
+            DataTable result = this.con.getResult(termMasuk);
+            valueCari = result.Rows[0]["DF"].ToString();
+            con.stopAccess();
+            return valueCari;
+
+        }
+        public void simpanTermBaru(string term)
+        {
+            con.openConnection();
+            this.con = new koneksi();
+            string queryTerm = "INSERT INTO public.\"Term\"(\"Term\") VALUES ('" + term + "');";
+            con.excequteQuery(queryTerm);
+            con.stopAccess();
+        }
+        public string cariID_Term(string data)
+        {
+            string termCari = null;
+            this.con = new koneksi();
+            con.openConnection();
+            string termMasuk = "SELECT * FROM public.\"Term\" where \"Term\"='" + data + "';";
+            DataTable result2 = this.con.getResult(termMasuk);
+            termCari = result2.Rows[0]["id_Term"].ToString();
+            con.stopAccess();
+            return termCari;
+        }
+        public void insert_ToBobot(string idDoc, string idTerm, int tf)
+        {
+            this.con = new koneksi();
+            con.openConnection();
+            string queryInsert_Dokument = "INSERT INTO public.\"bobotTerm\"(\"idDokumen\", \"id_Term\", \"Tf\") VALUES ('" + idDoc + "', '" + idTerm + "', " + tf + ");";
+            con.excequteQuery(queryInsert_Dokument);
+            con.stopAccess();
+        }
+        public void setIDF()
+        {
+            con.openConnection();
+            this.con = new koneksi();
+            string queryDF = "SELECT \"id_Term\"  FROM public.\"Term\";";
+            DataTable result = this.con.getResult(queryDF);
+            string[] dataID_Term = new string[result.Rows.Count];
+            for (int i = 0; i < result.Rows.Count; i++)
+            {
+
+                dataID_Term[i] = result.Rows[i]["id_Term"].ToString();
+                Console.WriteLine(dataID_Term[i] + " =====================================");
+                double value = count_IDF(dataID_Term[i]);
+                updateIDF(value, dataID_Term[i]);
+
+            }
+            con.stopAccess();
+
+        }
+        public void setTF_IDF()
+        {
+            con.openConnection();
+            this.con = new koneksi();
+            string queryIDF = "SELECT \"id_bobotTerm\", \"id_Term\"  FROM public.\"bobotTerm\"";
+            DataTable result = this.con.getResult(queryIDF);
+            string[] dataID_Term = new string[result.Rows.Count];
+            string[] dataID_BOBOT_Term = new string[result.Rows.Count];
+            for (int i = 0; i < result.Rows.Count; i++)
+            {
+
+                dataID_Term[i] = result.Rows[i]["id_Term"].ToString();
+                dataID_BOBOT_Term[i] = result.Rows[i]["id_bobotTerm"].ToString();
+                Console.WriteLine(dataID_Term[i] + " =====================================");
+                double value = count_TF_IDF(dataID_Term[i], dataID_BOBOT_Term[i]);
+                updateTF_IDF(value, dataID_BOBOT_Term[i]);
+            }
+            con.stopAccess();
+
+        }
+
+
         public bool getKataDasar(string kata)
         {
             this.con = new koneksi();
             string query = "SELECT katadasar FROM public.katadasar where katadasar= '" + kata + "' ";
             DataTable result = this.con.getResult(query);
+            con.closeConnection();
             if (result.Rows.Count == 1)
             {
                 return true;
@@ -38,6 +248,8 @@ namespace ConsoleApp1.myClass
             {
                 return false;
             }
+            con.stopAccess();
+
         }
 
         public int cekSandang(string kata)
@@ -231,14 +443,17 @@ namespace ConsoleApp1.myClass
             this.con = new koneksi();
             string query = "SELECT kata FROM public.kata_sambung where kata =  '" + kata + "'";
             DataTable result = this.con.getResult(query);
+            con.closeConnection();
             if (result.Rows.Count == 1)
             {
                 return true;
+
             }
             else
             {
                 return false;
             }
+
         }
 
         public void runStemming_Tala(string text)
@@ -285,6 +500,7 @@ namespace ConsoleApp1.myClass
                 else if (count.getKataDasar(arrayWord[i]) == true)
                 {
                     arrayWord[i] = arrayWord[i];
+                    this.con = new koneksi();
                     Console.WriteLine("[" + arrayWord[i] + "]" + "[ini kata dasar_ so Fix]");
                 }
                 //proses tala ke-1// hilangkan sandang kalau ada
@@ -324,6 +540,7 @@ namespace ConsoleApp1.myClass
                         {
                             Console.WriteLine("[" + arrayWord[i] + "]" + "Tidak Punyak akhiran, maka dilakukan menghilangkan awalan 1");
                             arrayWord[i] = count.replace_Awalan1(arrayWord[i]);
+                            //runVSM_DB(arrayWord[i], id, getFrekunsiKata());//lakukan proses kelola DB
                             Console.WriteLine("Tidak Punyak akhiran, maka dilakukan menghilangkan awalan 1 menjadi " + "[" + arrayWord[i] + "]");
                         }
                     }
@@ -334,6 +551,7 @@ namespace ConsoleApp1.myClass
                     arrayWord[i] = count.replace_Akhiran(arrayWord[i]);//proses hapus akhiran
                     if (count.getKataDasar(arrayWord[i]) == true)
                     {
+                        //runVSM_DB(arrayWord[i], id, getFrekunsiKata());//lakukan proses kelola DB
                         Console.WriteLine("sudah kata dasar jadi " + "[" + arrayWord[i] + "]");
                     }
                     else
@@ -347,6 +565,7 @@ namespace ConsoleApp1.myClass
                         {
                             Console.WriteLine("[" + arrayWord[i] + "]" + "Tidak Punyak akhiran, maka dilakukan menghilangkan awalan 1");
                             arrayWord[i] = count.replace_Awalan1(arrayWord[i]);
+                            //runVSM_DB(arrayWord[i], id, getFrekunsiKata());//lakukan proses kelola DB
                             Console.WriteLine("Tidak Punyak akhiran, maka dilakukan menghilangkan awalan 1 menjadi " + "[" + arrayWord[i] + "]");
                         }
                     }
@@ -355,6 +574,7 @@ namespace ConsoleApp1.myClass
                 {
                     Console.WriteLine("[" + arrayWord[i] + "]" + "Tidak Punyak akhiran, maka dilakukan menghilangkan awalan");
                     arrayWord[i] = count.replace_Awalan1(arrayWord[i]);
+                    //runVSM_DB(arrayWord[i], id, getFrekunsiKata());//lakukan proses kelola DB
                     Console.WriteLine("Tidak Punyak akhiran, maka dilakukan menghilangkan awalan 1 menjadi " + "[" + arrayWord[i] + "]");
                 }
                 else if (arrayWord[i].Length < 3)
@@ -364,8 +584,10 @@ namespace ConsoleApp1.myClass
                 else
                 {
                     arrayWord[i] = arrayWord[i];
+                    //runVSM_DB(arrayWord[i], id, getFrekunsiKata());//lakukan proses kelola DB
                     Console.WriteLine("[" + arrayWord[i] + "]");
                 }
+                con.stopAccess();
             }
 
 
@@ -413,10 +635,11 @@ namespace ConsoleApp1.myClass
             return value;
         }
 
-        public void getFrekunsiKata()
+        public void getFrekunsiKata(string id)
         {
             int[] frekuensi = new int[arrayWord.Length];
-            int n, i, j, ctr;
+            int i, j, ctr, countIDF = 0;
+            Console.WriteLine(arrayWord.Length + " Panjangnya");
             for (i = 0; i < arrayWord.Length; i++)
             {
                 frekuensi[i] = -1;
@@ -439,13 +662,36 @@ namespace ConsoleApp1.myClass
             }
             Console.Write("\nThe frequency of all elements of the array : \n");
             for (i = 0; i < arrayWord.Length; i++)
+
             {
                 if (frekuensi[i] != 0)
+
                 {
-                    Console.Write("{0} muncul {1} kali\n", arrayWord[i], frekuensi[i]);
+                    if (!arrayWord[i].Equals(""))
+                    {
+                        if (arrayWord[i].Length > 2)
+                        {
+                            runVSM_DB(arrayWord[i], id, frekuensi[i]);
+                        }
+                        else
+                        {
+                            Console.WriteLine(arrayWord[i] + " terlalu pendek, so gak dimasukkan");
+                        }
+
+                    }
+                }
+                if ((arrayWord.Length - 1) == i)
+                {
+                    Console.WriteLine("Proses menghitung IDF");
+                    setIDF();
+                    Console.WriteLine("Proses menghitung TF-IDF");
+                    setTF_IDF();
                 }
 
             }
+
         }
+
+
     }
 }

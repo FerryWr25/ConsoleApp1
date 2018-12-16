@@ -57,11 +57,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="myClass\bayyesClassifier.cs" />
     <Compile Include="myClass\koneksi.cs" />
     <Compile Include="myClass\ReadJson.cs" />
     <Compile Include="myClass\stemmingTala.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="..\..\..\..\Desktop\Program.cs">
+      <Link>Program.cs</Link>
+    </Compile>
+    <Compile Include="myClass\VSM_Running.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
