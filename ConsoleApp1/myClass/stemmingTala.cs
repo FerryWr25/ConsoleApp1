@@ -16,7 +16,10 @@ namespace ConsoleApp1.myClass
         int[] Array_frekuensiCopy;
         int[] Array_frekuensiResult;
         private string[] value;
+        string[] idIDF_berubah;
+        string[] array = new string[10];
         koneksi con = new koneksi();
+        int getNumber, panjangTempPerubahanIDF = 0;
 
         public int getCOunt()
         {
@@ -29,7 +32,6 @@ namespace ConsoleApp1.myClass
 
         public bool runVSM_DB(string data, string id, int tf)
         {
-            int status = 0;
             string idTerm;
             this.con = new koneksi();
             con.openConnection();
@@ -44,11 +46,13 @@ namespace ConsoleApp1.myClass
                 string queryTerm = "INSERT INTO public.\"Term\"(\"Term\", \"DF\") VALUES ('" + data + "','1');";
                 con.excequteQuery(queryTerm);
                 con.stopAccess();
+                con.closeConnection();
 
                 //baca idTermnya
                 idTerm = cariID_Term(data);
                 insert_ToBobot(id, idTerm, tf);
                 con.stopAccess();
+                con.closeConnection();
 
             }
             else // ketika sama
@@ -66,13 +70,29 @@ namespace ConsoleApp1.myClass
             return true;
 
         }
+        public bool cekID_Doc(string id)
+        {
+            bool status = false;
+            this.con = new koneksi();
+            con.openConnection();
+            string cek_KesediaanID = "SELECT *  FROM public.\"bobotTerm\" where \"idDokumen\"='" + id + "';";
+            DataTable result = this.con.getResult(cek_KesediaanID);
+            if (result.Rows.Count > 0)
+            {
+                status = false;
+            }
+            else
+            {
+                status = true;
+            }
+            return status;
+        }
         public double count_IDF(string id_term)
         {
             //hitung idf
-            double n_Doc = Convert.ToDouble(get_LongDoc());
+            double n_Doc = Convert.ToDouble(getNumber);
             double n_DF = Convert.ToDouble(getDF_Term(id_term));
             double IDF = Math.Round(Math.Log10(n_Doc / n_DF), 3);
-            Console.WriteLine("Log (" + n_Doc + "/" + n_DF + ")" + " = " + IDF);
             //set IDF
             return IDF;
         }
@@ -82,7 +102,6 @@ namespace ConsoleApp1.myClass
             double TF_Term = Convert.ToDouble(getTF_Term(idBobotTerm));
             double IDF_Term = Convert.ToDouble(getIDF_Term(id_term));
             double TF_IDF = Math.Round(TF_Term * IDF_Term, 3);
-            Console.WriteLine(TF_Term + " * " + IDF_Term + " = " + TF_IDF);
             //set IDF
             return TF_IDF;
         }
@@ -118,16 +137,22 @@ namespace ConsoleApp1.myClass
             con.stopAccess();
             return getDF_Term;
         }
-        public int get_LongDoc()
+        public void get_LongDoc()
         {
-            int getNumber;
             con.openConnection();
             this.con = new koneksi();
-            string queryDF = "SELECT count (*) as dipakek_nDoc FROM public.\"bobotTerm\" group by \"idDokumen\";";
+            string queryDF = "select count(distinct \"idDokumen\") as getLong from public.\"bobotTerm\";";
             DataTable result = this.con.getResult(queryDF);
-            getNumber = Convert.ToInt32(result.Rows.Count);
+            getNumber = Convert.ToInt32(result.Rows[0]["getLong"].ToString());
+            if (getNumber == 0)
+            {
+                getNumber = 1;
+            }
+            else
+            {
+                getNumber += 1;
+            }
             con.stopAccess();
-            return getNumber;
         }
         public void updateDF(string term, string ndata)
         {
@@ -204,7 +229,6 @@ namespace ConsoleApp1.myClass
             {
 
                 dataID_Term[i] = result.Rows[i]["id_Term"].ToString();
-                Console.WriteLine(dataID_Term[i] + " =====================================");
                 double value = count_IDF(dataID_Term[i]);
                 updateIDF(value, dataID_Term[i]);
 
@@ -225,7 +249,6 @@ namespace ConsoleApp1.myClass
 
                 dataID_Term[i] = result.Rows[i]["id_Term"].ToString();
                 dataID_BOBOT_Term[i] = result.Rows[i]["id_bobotTerm"].ToString();
-                Console.WriteLine(dataID_Term[i] + " =====================================");
                 double value = count_TF_IDF(dataID_Term[i], dataID_BOBOT_Term[i]);
                 updateTF_IDF(value, dataID_BOBOT_Term[i]);
             }
@@ -248,7 +271,6 @@ namespace ConsoleApp1.myClass
             {
                 return false;
             }
-            con.stopAccess();
 
         }
 
@@ -456,7 +478,7 @@ namespace ConsoleApp1.myClass
 
         }
 
-        public void runStemming_Tala(string text)
+        public string[] runStemming_Tala(string text)
         {
             char[] delimiterChars = { ' ', ',', '.', ':', '\t', '-', '(', ')', '"', '`' };
             System.Console.WriteLine($"Original text: '{text}'");
@@ -588,10 +610,12 @@ namespace ConsoleApp1.myClass
                     Console.WriteLine("[" + arrayWord[i] + "]");
                 }
                 con.stopAccess();
+                array[i] = arrayWord[i];
             }
-
-
+            return array;
         }
+
+
         public string[] getValue_Tala2()
         {
             Console.WriteLine("=================TERM KATA YANG DIDAPAT=========================");
@@ -621,18 +645,18 @@ namespace ConsoleApp1.myClass
         public string getValue_Tala()
         {
             int[] frekuensi = new int[arrayWord.Length];
-            string value = null;
+            string[] value = new string[arrayWord.Length];
             Console.WriteLine("TERM KATA YANG DIDAPAT==================================================");
             for (int wir = 0; wir < arrayWord.Length; wir++)
             {
                 if (!arrayWord[wir].Equals(""))
                 {
                     Console.WriteLine(arrayWord[wir]);
-                    value = arrayWord[wir];
+                    value[wir] = arrayWord[wir];
                 }
             }
             Console.WriteLine("=================SUKSES==========================");
-            return value;
+            return value.ToString();
         }
 
         public void getFrekunsiKata(string id)
@@ -680,18 +704,49 @@ namespace ConsoleApp1.myClass
 
                     }
                 }
-                if ((arrayWord.Length - 1) == i)
+
+            }
+
+        }
+        public void getFrekunsiKata_onArray(string[] data)
+        {
+            int[] frekuensi = new int[data.Length];
+            int i, j, ctr;
+            Console.WriteLine(data.Length + " Panjangnya");
+            for (i = 0; i < data.Length; i++)
+            {
+                frekuensi[i] = -1;
+            }
+            for (i = 0; i < data.Length; i++)
+            {
+                ctr = 1;
+                for (j = i + 1; j < data.Length; j++)
                 {
-                    Console.WriteLine("Proses menghitung IDF");
-                    setIDF();
-                    Console.WriteLine("Proses menghitung TF-IDF");
-                    setTF_IDF();
+                    if (data[i].Equals(data[j]))
+                    {
+                        ctr++;
+                        frekuensi[j] = 0;
+                    }
+                }
+                if (frekuensi[i] != 0)
+                {
+                    frekuensi[i] = ctr;
+                }
+            }
+            Console.Write("List Id-Dokumen berita yang disinggung berdasarkan query");
+            for (i = 0; i < data.Length; i++)
+
+            {
+                if (frekuensi[i] != 0)
+
+                {
+                    Console.WriteLine(data[i] + " muncul sebanyak " + (frekuensi[i] % 49));
+
                 }
 
             }
 
         }
-
 
     }
 }

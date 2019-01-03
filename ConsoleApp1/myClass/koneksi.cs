@@ -23,7 +23,7 @@ namespace ConsoleApp1.myClass
             if (this.con == null)
             {
                 // buat koneksi baru
-                var connectionString = "Server=127.0.0.1;Port=5432;Database=Skripsiku; User Id=postgres; Password = 'admin' ;Pooling=True;Minimum Pool Size=0;Maximum Pool Size=1024";
+                var connectionString = "Server=127.0.0.1;Port=5432;Database=Skripsiku; User Id=postgres; Password = 'admin' ;Pooling=False;";
                 this.con = new NpgsqlConnection(connectionString);
             }
 
@@ -31,7 +31,7 @@ namespace ConsoleApp1.myClass
             if (this.con.State == ConnectionState.Closed)
             {
                 this.con.Open();
-            }
+                NpgsqlConnection.ClearAllPools();}
         }
         public void stopAccess()
         {
@@ -56,7 +56,6 @@ namespace ConsoleApp1.myClass
 
             // eksekusi query
             this.command.ExecuteNonQuery();
-            
             this.closeConnection();
         }
 

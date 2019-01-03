@@ -63,6 +63,7 @@
     <Compile Include="..\..\..\..\Desktop\Program.cs">
       <Link>Program.cs</Link>
     </Compile>
+    <Compile Include="myClass\VSM.cs" />
     <Compile Include="myClass\VSM_Running.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
